@@ -1,0 +1,10 @@
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+
+# Personal learning progress and local runtime files
+data/progress.db*
+data/SAFETY*.db
+data/*.log
+data/audio/*.part
