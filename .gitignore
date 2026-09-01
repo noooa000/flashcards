@@ -8,3 +8,5 @@ data/progress.db*
 data/SAFETY*.db
 data/*.log
 data/audio/*.part
+data/audio/*.mp3
+*.lnk
