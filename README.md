@@ -1,236 +1,523 @@
-# 法语单词卡 · Flashcards
+# French Vocabulary Flashcards
 
-基于 [`..\tcf-tef-vocab\vocab.db`](../tcf-tef-vocab) 的 9,368 个法语词条，
-随机抽卡、自动朗读、按记忆曲线安排复习。
+A French vocabulary flashcard app built around a database of **9,368 French entries**.
 
-**目标是广度**：先把 5,000+ 个词过一遍，而不是把少数词背到完美。所以首屏最大的
-数字是「已见 / 总数」，而且每天的复习永远不会挤掉新词。
+Cards are selected automatically, reviewed according to a spaced-repetition schedule, and read aloud using text-to-speech.
 
-## 开始
+The main goal is **breadth**: see **5,000+ different words** before trying to memorize a small vocabulary perfectly. For that reason, the largest number on the home screen is **Seen / Total**, and daily reviews are never allowed to completely replace new vocabulary.
 
-双击 **`Flashcards.bat`**。首次运行会自动建 `.venv` 并装 `edge-tts`（约 10 秒），
-之后直接启动并打开浏览器。首屏按**空格**即可开始。
+## Getting Started
 
-## 键盘
+Double-click **`Flashcards.bat`**.
 
-| 键 | 作用 |
-|---|---|
-| `空格` | 翻面后翻到下一张 / 关掉阶段复习 / 庆祝弹窗执行当前按钮 / 完成页再来一组 |
-| `Esc` | 在庆祝弹窗中选择「今天到此为止」 |
-| `Ctrl+C` | 不认识 |
-| `Backspace` | 模糊 |
-| `Delete` | 认识 |
-| `Ctrl+C`（翻面后）| 反悔——把刚才的评分改成「不认识」 |
+On the first launch, the script automatically creates a `.venv` environment and installs `edge-tts`. After that, it starts the local server and opens the app in your browser.
 
-选中了文字时 `Ctrl+C` 仍然是复制，不会误判成评分。
+Press **Space** on the home screen to begin.
 
-手动启动等价于：
+## Keyboard Controls
+
+| Key                     | Action                                                                                                                                                  |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Space`                 | Go to the next card after flipping / close a checkpoint review / activate the current celebration button / start another set from the completion screen |
+| `Esc`                   | Choose “Finish for today” in the celebration dialog                                                                                                     |
+| `Ctrl+C`                | I don't know                                                                                                                                            |
+| `Backspace`             | Fuzzy                                                                                                                                                   |
+| `Delete`                | I know                                                                                                                                                  |
+| `Ctrl+C` after flipping | Undo the previous rating and change it to “I don't know”                                                                                                |
+
+If text is selected, `Ctrl+C` still works normally as **Copy** and will not accidentally rate the card.
+
+The equivalent manual startup command is:
 
 ```bat
 .venv\Scripts\python.exe server.py
 ```
 
-服务只绑定 `127.0.0.1:8765`，局域网内其他机器访问不到。
+The server only binds to `127.0.0.1:8765`, so it cannot be accessed by other devices on the local network.
 
-## 一天是怎么排的
+## Daily Scheduling
 
-每天 100 张卡，其中**至少 60 张是没见过的新词**：
+Each day contains **100 cards**, with **at least 60 unseen words**.
 
-1. 先给新词留够 60 张的名额
-2. 剩下的 40 张给今天到期的复习
-3. 到期复习不够 40 张时，空出来的名额**继续补新词**（不浪费）
-4. 新词全部见过之后，整天自然变成纯复习
+The daily queue is built like this:
 
-这条规则是刻意的：如果让复习优先，几周后复习量就会吃掉全部 100 张，新词
-再也进不来，"见过 5,000 词"永远达不到。
+1. Reserve 60 slots for new words.
+2. Use the remaining 40 slots for reviews due today.
+3. If fewer than 40 reviews are due, fill the unused slots with additional new words.
+4. Once every word has been seen, the daily session naturally becomes review-only.
 
-### 再来一组
+This behavior is intentional.
 
-100 张做完之后，庆祝弹窗和结束页都会给一个「**再来一组**」——**30 个新词**
-（不掺复习，加练就是为了铺广度）。想连刷几组都行，每组都不会重复今天已经答过的词；
-新词用完之后会自动退回到到期复习。
+If reviews always had priority, after a few weeks they could consume the entire daily quota of 100 cards. New vocabulary would stop entering the queue, making the goal of seeing 5,000 words much harder to reach.
 
-达到当天目标时，会先显示完最后一份阶段复习清单，再弹出庆祝卡；之后每完成一组
-30 词加练，也会弹出同一套庆祝卡。卡片复用随机奖励图、鼓励语和彩纸动画，并提供
-「再来一组」与「今天到此为止」两个选择。
+### Another Set
 
-加练的卡照常计入今天的数字（它们是真的复习），所以热力图上会看到超过 100 的
-一天。当日目标的庆祝仍然一天只触发一次；加练庆祝则在每组 30 词完成后出现，
-不会重复消耗当日目标的庆祝状态。
+After completing the daily 100 cards, both the celebration dialog and the completion screen offer **Another Set**.
 
-组的大小和新词配比在 `store.py` 的 `EXTRA_SIZE` / `EXTRA_NEW`。每完成一整组，
-程序还会用唯一 token 把当天的加练组数记入进度数据库；重复提交不会多算。
-完成页会按组数从 `Sticker\` 目录各取一张贴纸，稳定地随机铺在奖励框里。
-旧进度没有组数记录时，会用 `⌊(今日完成词数 - 今日目标) / 30⌋` 推算完整组数；
-显示时取推算值和已记录值中较大的一个，因此新增记录不会让旧贴纸消失。
+Each extra set contains **30 new words** and no scheduled reviews. Extra sessions are specifically intended to increase vocabulary coverage.
 
-**同一张卡每天只计一次。** 选「不认识」后这张卡会在本轮稍后再出现一次，
-那是重学，不是进度，所以不会把今天的数字刷上去。
+You can complete multiple extra sets in a row. Words already answered that day will not appear again as new cards.
 
-## 记忆曲线
+If there are no unseen words left, the app automatically falls back to due reviews.
 
-SM-2 变体，三个按钮：
+When the daily target is reached, the app first shows the final checkpoint review and then opens the celebration card.
 
-| 按钮 | 键 | 下次出现 |
-|---|---|---|
-| 不认识 | `Ctrl+C` | 间隔清零，本轮稍后重来，ease −0.20 |
-| 模糊 | `Backspace` | 间隔 × 1.2（只会变长，不会变短），ease −0.15 |
-| 认识 | `Delete` | 1 天 → 3 天 → × ease，ease +0.05 |
+After that, every complete 30-word extra set triggers another celebration card.
 
-ease 限制在 1.3–2.8。**间隔 ≥ 21 天算「已掌握」**。一路选「认识」的词，
-间隔是 1 → 3 → 8 → 22 → 60 → 168 → 470 天，第 4 次就进入已掌握。
+The same celebration UI is reused with:
 
-### 反悔
+* a randomly selected reward image
+* an encouragement message
+* confetti animation
+* **Another Set**
+* **Finish for Today**
 
-看到解释之后觉得自己刚才点高了，再按一次 `Ctrl+C` 或点「反悔 · 不认识」，这张卡按
-「不认识」重新安排，并在本轮稍后再出现一次。翻面后这个选项固定显示；如果本来已经
-选择了「不认识」，再次使用只会进入下一张，不会重复记录评分。
+Extra cards are included in the day's statistics because they are real study activity, so the heatmap may show days with more than 100 completed cards.
 
-按下之后**会自动翻到下一张**，不用再点一次「下一张」——按反悔的时候解释已经
-看完了。如果你手快自己点了「下一张」，也不会连跳两张。
+The main daily-goal celebration is triggered only once per day. Extra-set celebrations are triggered after every completed 30-word set and do not consume the daily-goal celebration state.
 
-反悔会先把刚才那次评分对 ease 的影响**撤回**，再按「不认识」计算，所以
-「认识 → 反悔」和一开始就点「不认识」落在同一个 ease 上，不会两次调整叠在一起。
-今天的计数不受影响——这个词已经计过一次了。
+The extra-set configuration is controlled by `EXTRA_SIZE` and `EXTRA_NEW` in `store.py`.
 
-### 阶段复习
+Whenever a full extra set is completed, the app stores the completed set count in the progress database using a unique token. Repeated submissions cannot increase the count twice.
 
-每过 **7 个词**弹一次列表，把刚才这 7 个词连中文意思一起摆出来，左边的圆点
-是你给的评分（粉红=不会，浅绿=有点印象，橄榄绿=认识）。**点任意一行会再念一遍那个词**。
-按空格或点「继续」回到刷词。一天结束时若还剩不足 7 个，也会先复习完再收尾。
+The completion screen selects one sticker from the `Sticker\` directory for each completed extra set and arranges them randomly inside the reward area.
 
-计的是**不重复的词**：选了「不认识」的卡会在本轮内再出现一次，但列表里只占一行，
-圆点显示你**最后一次**给的评分。所以一个 7 词的列表可能刷了更多卡才凑够。
+For older progress data that does not contain explicit extra-set records, the app estimates the number of completed sets using:
 
-评分为「有点印象」或「认识」的行最右侧会显示低对比、小字号的法语操作
-**`Je ne sais pas`**。点击后会沿用上面的反悔逻辑改判为「不认识」，圆点变为粉红色，
-并把该词放回本轮稍后重学；原本就是粉红色「不会」的行不显示这个操作。
+```text
+floor((cards completed today - daily goal) / 30)
+```
 
-词汇界面右侧绿色记录卡的第二行会显示距下一次阶段复习还差几个不重复词；复习完成后
-自动重置为 7。
+For display purposes, it uses whichever value is larger: the estimated value or the recorded value. This prevents stickers from disappearing when older progress data is upgraded.
 
-改 `static\index.html` 里的 `REVIEW_EVERY` 可以调这个间隔。
+**Each card counts only once per day.**
 
-## 学习日历
+If you select **I don't know**, the same card will appear again later in the current session. That second appearance is relearning, not additional progress, so it does not increase the daily count.
 
-完成界面右下角是**当月**日历热力图（周一起排，法语月份 / 星期），达标的日期格
-整格填满橄榄色，今天也填橄榄色，下面是达成天数 / 当前连续 / 最长连续。
+## Spaced Repetition
 
-## 完成时的奖励
+The app uses a modified SM-2 system with three ratings.
 
-达成当天目标、或做完一组加练之后，弹窗里会从 **`image\`** 里随机挑一张图，
-配一句鼓励语（中文为主，夹杂几句法语谚语）。连着两次不会挑到同一张。
+| Rating       | Key         | Next appearance                                                        |
+| ------------ | ----------- | ---------------------------------------------------------------------- |
+| I don't know | `Ctrl+C`    | Interval resets, card returns later in the current session, ease −0.20 |
+| Fuzzy        | `Backspace` | Interval × 1.2, never shortened, ease −0.15                            |
+| I know       | `Delete`    | 1 day → 3 days → × ease, ease +0.05                                    |
 
-**当天结束的那一页**也一样：一张随机图，加一句**法语谚语**和中文翻译。这句会
-自动朗读一遍，点它或点右上角的 🔊 可以再听。谚语在 `FR_CHEERS` 数组里。
+Ease is limited to **1.3–2.8**.
 
-图片是**运行时读目录**的，随时往 `image\` 里丢新图，刷新页面就能出现，不用重启。
-支持 png / jpg / gif / webp。目录空着也不影响，那一版就只显示标题和谚语、不放图。
+A card with an interval of **21 days or more** is considered **mastered**.
 
-鼓励语在 `static\index.html` 的 `FR_CHEERS` 数组里，想改想加都行。
+If a word is consistently rated **I know**, its approximate intervals are:
 
-## 界面
+```text
+1 → 3 → 8 → 22 → 60 → 168 → 470 days
+```
 
-前端直接照着你给的 MOTS 样稿做：一整块编辑设计风的画布（米白纸面 + 网点、
-墨黑发丝描边、`14px` 硬投影、Georgia 衬线大字），两个画面——**词汇界面**和
-**完成界面**，右上角 `01 / 02` 可以手动切。后端和逻辑完全没动，只是换了张皮。
+This means it reaches the mastered threshold after the fourth successful review.
 
-- **词汇界面**：上方的大幅粉色卡片放单词、词性圆牌、音标，右侧叠放每日记录卡；
-  三块答题格紧接在卡片下方，已见 / 总数、进度条和月份 / 连续 / 目标信息移到下层——奶油（Je ne sais pas /
-  不认识 · 01）、粉（C'est flou / 模糊 · 02）、橄榄（Je connais / 认识 · 03）。
-  选完翻面，卡片里显示释义 / 词根 / 例句，底部换成「下一张 / 反悔」。
-- **完成界面**：左边牛皮纸块放「已见 / 目标 / 连续」，中间橄榄块是**奖励图位**，
-  粉色块写「Objectif du jour terminé」加法语谚语 + 中文，右下是当月日历热力图。
+### Undoing a Rating
 
-**两种完成界面**按你说的分：**今日已完成**时奖励图位放一张 `image\` 里的随机图
-（对应有图片那版）；**今日还没开始**时同一个界面但**不放图**，只有占位说明和
-一个「开始」按钮（对应没图片那版）。奖励区域右上角的圆圈显示累计达成目标的天数。
+Sometimes a word seems familiar on the front, but after seeing the explanation you realize that you rated it too highly.
 
-字体用系统自带的 Georgia + Arial，不依赖联网字体。配色在 `static\index.html`
-顶部 `:root` 的 `--cream / --pink / --light-green / --olive / --kraft / --ink`。
+After flipping the card, press `Ctrl+C` again or click **Undo · I don't know**.
 
-## 朗读
+The card will then be rescheduled as **I don't know** and placed back into the current session for relearning.
 
-本机没有装法语语音包，浏览器自带的 `speechSynthesis` 里一个法语音色都没有，
-所以走的是 **`edge-tts`**（微软 Edge 的云端 TTS，免密钥）——和 `B:\Code\Spinish`
-同一套做法，音色 `fr-FR-DeniseNeural`，语速 −10% 便于跟读。
+The undo option is always shown on the back of the card.
 
-- 合成结果按 `sha1(音色|语速|文本)` 缓存在 `data\audio\`，同一句只合成一次
-- 展示当前卡时会**预取下一张**的音频，连续刷词基本感觉不到延迟
-- 正面、翻面和右上角重播都会依次朗读**单词 → 第一条有效例句**
-- 合成失败（断网等）只是没声音，**不会挡住刷词**
+If the original rating was already **I don't know**, using the action again simply advances to the next card rather than recording the same rating repeatedly.
 
-想提前缓存，空闲时跑：
+After undoing, the app **automatically moves to the next card**. There is no need to press **Next** again because the explanation has already been viewed.
+
+If you press **Next** very quickly yourself, the app still prevents an accidental double skip.
+
+Undoing first reverses the ease adjustment made by the original rating and then applies the **I don't know** calculation.
+
+As a result:
+
+```text
+I know → Undo
+```
+
+produces the same ease value as choosing:
+
+```text
+I don't know
+```
+
+from the beginning.
+
+The daily count does not change because the word has already been counted once.
+
+## Checkpoint Reviews
+
+After every **7 unique words**, the app opens a checkpoint review showing those seven words together with their Chinese meanings.
+
+The colored dot on the left represents the latest rating:
+
+* pink = I don't know
+* light green = Fuzzy
+* olive = I know
+
+Click any row to hear that word again.
+
+Press **Space** or click **Continue** to return to the flashcards.
+
+If fewer than seven words remain at the end of a session, the final partial group is still shown before the completion screen.
+
+The checkpoint counts **unique words**, not card appearances.
+
+A word rated **I don't know** may appear again later in the same session, but it still occupies only one row in the checkpoint review.
+
+The dot always reflects the word's **most recent rating**.
+
+As a result, you may answer more than seven card appearances before accumulating seven unique words for a checkpoint.
+
+Rows rated **Fuzzy** or **I know** also display a small low-contrast French action on the right:
+
+**`Je ne sais pas`**
+
+Clicking it applies the same undo behavior described above:
+
+* changes the rating to **I don't know**
+* turns the dot pink
+* sends the word back into the current session for relearning
+
+Rows already rated **I don't know** do not display this action.
+
+On the vocabulary screen, the second line of the green record card shows how many unique words remain before the next checkpoint review.
+
+After a checkpoint is completed, the counter resets to 7.
+
+To change the checkpoint interval, edit `REVIEW_EVERY` in:
+
+```text
+static\index.html
+```
+
+## Study Calendar
+
+The bottom-right corner of the completion screen contains a heatmap calendar for the **current month**.
+
+The calendar:
+
+* starts weeks on Monday
+* uses French month and weekday names
+* fills successful days with olive
+* also fills the current day with olive
+
+Below the calendar are statistics for:
+
+* total successful days
+* current streak
+* longest streak
+
+## Completion Rewards
+
+When the daily goal is reached, or when an extra set is completed, the celebration dialog randomly selects an image from the **`image\`** directory.
+
+It is paired with an encouragement message, mostly in Chinese with several French sayings mixed in.
+
+The same image is never selected twice in a row.
+
+The final completion screen also contains:
+
+* one random reward image
+* one **French saying**
+* its Chinese translation
+
+The French sentence is automatically read aloud once.
+
+Click the sentence or the 🔊 button in the top-right corner to hear it again.
+
+The sayings are stored in the `FR_CHEERS` array.
+
+Images are read from the directory **at runtime**.
+
+You can add new files to `image\` at any time and simply refresh the page. Restarting the server is not necessary.
+
+Supported formats:
+
+```text
+png
+jpg
+gif
+webp
+```
+
+If the directory is empty, the app still works normally. The reward area simply displays the title and saying without an image.
+
+Encouragement messages can be edited or extended in the `FR_CHEERS` array inside:
+
+```text
+static\index.html
+```
+
+## Interface
+
+The frontend uses an editorial-design-inspired visual style:
+
+* warm off-white paper background
+* halftone texture
+* thin black outlines
+* `14px` hard shadows
+* large Georgia serif typography
+
+There are two primary screens:
+
+1. **Vocabulary**
+2. **Completion**
+
+The `01 / 02` control in the upper-right corner can also switch between them manually.
+
+### Vocabulary Screen
+
+The upper section contains a large pink flashcard with:
+
+* the French word
+* a circular part-of-speech badge
+* phonetic transcription
+
+A daily progress card overlaps on the right.
+
+Three answer panels sit immediately below the flashcard:
+
+* cream — **Je ne sais pas / I don't know · 01**
+* pink — **C'est flou / Fuzzy · 02**
+* olive — **Je connais / I know · 03**
+
+The lower section contains:
+
+* Seen / Total
+* progress bar
+* month
+* streak
+* daily target information
+
+After choosing a rating, the flashcard flips and displays:
+
+* definition
+* word root / etymological information when available
+* example sentences
+
+The bottom controls then change to:
+
+* **Next**
+* **Undo**
+
+### Completion Screen
+
+The completion screen contains:
+
+* a kraft-paper panel on the left for **Seen / Goal / Streak**
+* an olive reward-image area in the center
+* a pink panel containing **Objectif du jour terminé**
+* a French saying with Chinese translation
+* the monthly heatmap calendar in the bottom-right corner
+
+There are two completion-screen states.
+
+**Daily goal already completed:**
+The reward area shows a random image from `image\`.
+
+**Day not started yet:**
+The same layout is shown without an image. Instead, the reward area contains placeholder text and a **Start** button.
+
+The circle in the upper-right corner of the reward area displays the cumulative number of days on which the daily goal has been completed.
+
+The interface uses system fonts only:
+
+```text
+Georgia
+Arial
+```
+
+No online font service is required.
+
+The main colors can be edited through the CSS variables near the top of `static\index.html`:
+
+```text
+--cream
+--pink
+--light-green
+--olive
+--kraft
+--ink
+```
+
+## Text-to-Speech
+
+French pronunciation is generated using **`edge-tts`**, which provides Microsoft neural voices without requiring an API key.
+
+Current settings:
+
+```text
+Voice: fr-FR-DeniseNeural
+Rate: -10%
+```
+
+The slightly slower speech rate is intended to make shadowing and pronunciation practice easier.
+
+Generated audio is cached in:
+
+```text
+data\audio\
+```
+
+The cache key is based on:
+
+```text
+sha1(voice | rate | text)
+```
+
+so identical audio only needs to be generated once.
+
+When the current card is displayed, the app also **prefetches the next card's audio**, reducing delays during continuous study.
+
+On both the front and back of a card, as well as when using the replay button, the app reads:
+
+```text
+word → first valid example sentence
+```
+
+If TTS generation fails because of a network problem, the card simply remains silent. Study progress is never blocked.
+
+### Pre-caching Audio
+
+To generate audio ahead of time, run:
 
 ```bat
 .venv\Scripts\python.exe precache.py 500
 ```
 
-约 3.5 行/秒，500 词大概 4 分钟。已缓存的会跳过，重复跑很便宜。
+Already cached entries are automatically skipped, so running the command multiple times is inexpensive.
 
-## 例句
+## Example Sentences
 
-约 10% 的例句里还留着 OCR 没能拆开的连写（`Ceciestphysiquementimpossible`）。
-这些例句**不会出现在卡片正面，也不会被朗读**——判断依据是句中是否有词库里
-查不到的超长词，所以 `traditionnellement` 这类真正的长词不会被误伤。它们仍然
-显示在卡片背面，配着中文翻译还是能看的。
+Some source example sentences still contain OCR errors where multiple words were accidentally joined together, for example:
 
-## 文件
-
-```
-server.py     HTTP 服务（只监听 127.0.0.1）+ 词库只读加载
-srs.py        记忆曲线，纯函数
-store.py      progress.db 读写、每日队列、统计
-tts.py        edge-tts 合成 + 缓存
-precache.py   离线预热音频
-static\index.html   全部界面
-data\progress.db    你的学习进度
-data\audio\         mp3 缓存
+```text
+Ceciestphysiquementimpossible
 ```
 
-各文件都能单独跑自检：
+These suspicious examples are:
+
+* not shown on the front of the card
+* not read aloud
+
+Detection is based on unusually long strings that cannot be found in the vocabulary database.
+
+Legitimate long French words such as:
+
+```text
+traditionnellement
+```
+
+are therefore not automatically rejected simply because they are long.
+
+The affected example sentences are still visible on the back of the card together with their Chinese translations, where they may still be useful for reference.
+
+## Project Structure
+
+```text
+server.py             Local HTTP server + read-only vocabulary loading
+srs.py                Spaced-repetition logic implemented as pure functions
+store.py              progress.db access, daily queues, and statistics
+tts.py                edge-tts synthesis + audio cache
+precache.py           Offline audio pre-caching utility
+static\index.html     Complete frontend
+data\progress.db      Learning progress
+data\audio\           Cached MP3 files
+```
+
+Individual modules can also run their own self-checks:
 
 ```bat
-.venv\Scripts\python.exe srs.py      :: 记忆曲线断言
-.venv\Scripts\python.exe store.py    :: 队列、幂等、庆祝、连续天数断言
-.venv\Scripts\python.exe tts.py      :: 合成一句法语并验证并发去重
+.venv\Scripts\python.exe srs.py
+.venv\Scripts\python.exe store.py
+.venv\Scripts\python.exe tts.py
 ```
 
-## 数据安全
+These test:
 
-- **`vocab.db` 全程只读**（`mode=ro`），这个应用不可能弄坏词库
-- 进度单独存在 `data\progress.db`，与词库互不相干
-- 页脚「导出进度」下载 JSON 备份，「导入进度」把它读回来
-- 每次评分都带一个一次性 token，双击或网络重试都不会把今天的数字加两次
+* spaced-repetition assertions
+* queue generation
+* idempotency
+* celebration state
+* streak calculations
+* TTS synthesis and concurrent-request deduplication
 
-### 导入
+## Data Safety
 
-导入是**覆盖**，不是合并——它是导出的另一半，用来换机器或误删之后恢复。
-选好文件后会先弹一个确认框，把文件里的词数、记录数、导出时间，和当前的进度
-并排给你看，确认了才写。
+The vocabulary database is always opened in **read-only mode** (`mode=ro`), so the flashcard application cannot modify or corrupt the source vocabulary data.
 
-**写之前会自动把当前进度备份成 `data\progress-before-import-<时间戳>.db`**，
-所以导错文件也能退回去（把它改名成 `progress.db` 即可）。
+Learning progress is stored separately in:
 
-文件里的每个值都会做类型和范围检查再进库，词库里已经没有的词会被跳过并在
-结果里报数量；不是导出文件的东西会在碰数据库之前就被拒绝。
+```text
+data\progress.db
+```
 
-## 可调参数
+The vocabulary data and progress data are therefore independent.
 
-| 位置 | 常量 | 作用 |
-|---|---|---|
-| `store.py` | `DAILY_GOAL` | 每日卡片总数，默认 100 |
-| `store.py` | `MIN_NEW` | 其中新词保底，默认 60（即 60 新 + 40 复习）|
-| `store.py` | `EXTRA_SIZE` / `EXTRA_NEW` | 加练一组的张数与新词数，默认 30 / 30（全新词）|
-| `srs.py` | `MASTERED_DAYS` | 「已掌握」的间隔门槛，默认 21 天 |
-| `srs.py` | `EASE_STEP` | 三个按钮对 ease 的增减 |
-| `tts.py` | `VOICE` / `RATE` | 音色与语速 |
-| `server.py` | `PORT` | 端口，默认 8765 |
-| `server.py` | `MIN_SUSPECT` | 判定连写的词长门槛，默认 13 |
+The footer provides two backup controls:
 
-## 已知限制
+* **Export Progress** — downloads a JSON backup
+* **Import Progress** — restores progress from a backup
 
-- `edge-tts` 需要联网。已缓存的词照常发声；没缓存又断网时那张卡静音，但不影响刷。
-- 音标来自 OCR，鼻音和长音符号常有缺失（`aplomb` → `apl`），仅供参考。
-- 约 3% 的词条没能解析出词性，词性字符串仍留在中文释义开头，不影响使用。
-- 音频缓存按每天 100 词约增长 5 MB，全部缓存满约 550 MB；删掉只是重新合成。
+Every rating request contains a one-time token, so accidental double-clicks or network retries cannot increase the daily count twice.
+
+### Importing Progress
+
+Importing is a **replacement operation**, not a merge.
+
+It is designed as the counterpart to exporting, primarily for:
+
+* moving progress to another machine
+* restoring progress after accidental deletion
+
+After selecting an import file, the app first displays a confirmation dialog comparing the imported data with the current progress.
+
+The dialog includes information such as:
+
+* number of words
+* number of records
+* export time
+* current progress statistics
+
+Nothing is written until the import is confirmed.
+
+Before replacing the current database, the app automatically creates a backup:
+
+```text
+data\progress-before-import-<timestamp>.db
+```
+
+If the wrong file is imported, the previous database can therefore be restored by replacing `progress.db` with the backup.
+
+Every imported value is validated for both type and allowed range before being written to the database.
+
+Words that no longer exist in the vocabulary database are skipped and reported in the import result.
+
+Files that do not match the expected export format are rejected **before the progress database is modified**.
+
+## Configuration
+
+| File        | Constant                   | Purpose                                                                            |
+| ----------- | -------------------------- | ---------------------------------------------------------------------------------- |
+| `store.py`  | `DAILY_GOAL`               | Total number of daily cards. Default: 100                                          |
+| `store.py`  | `MIN_NEW`                  | Minimum number of new cards. Default: 60                                           |
+| `store.py`  | `EXTRA_SIZE` / `EXTRA_NEW` | Size and new-word count of an extra set. Default: 30 / 30                          |
+| `srs.py`    | `MASTERED_DAYS`            | Interval required for a card to count as mastered. Default: 21 days                |
+| `srs.py`    | `EASE_STEP`                | Ease adjustments for the three ratings                                             |
+| `tts.py`    | `VOICE` / `RATE`           | TTS voice and speech rate                                                          |
+| `server.py` | `PORT`                     | Local server port. Default: 8765                                                   |
+| `server.py` | `MIN_SUSPECT`              | Minimum word length used when detecting suspicious OCR concatenations. Default: 13 |
+
+## Known Limitations
+
+* `edge-tts` requires an internet connection for audio that has not already been cached. Cached words continue to work offline.
+* Phonetic transcriptions come from OCR data, so nasal vowels and other symbols may occasionally be incomplete or incorrect.
+* Roughly 3% of vocabulary entries do not have a successfully parsed part of speech. In those cases, the original part-of-speech text remains at the beginning of the Chinese definition.
+* The audio cache grows as more vocabulary is synthesized. It can be deleted safely; missing audio will simply be generated again when needed.
+
